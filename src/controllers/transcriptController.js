@@ -12,9 +12,12 @@ const { matchCommonAnswer } = require("./responseController");
 
 
 const PYTHON_SCRIPT = path.join(__dirname, "..", "..", "python", "transcribe.py");
-const PYTHON_BIN = process.platform === "win32"
-  ? path.join(__dirname, "..", "..", "python", "venv", "Scripts", "python.exe")
-  : path.join(__dirname, "..", "..", "python", "venv", "bin", "python3");
+
+const PYTHON_BIN = process.env.PYTHON_BIN || (
+  process.platform === "win32"
+    ? path.join(__dirname, "..", "..", "python", "venv", "Scripts", "python.exe")
+    : "python3"
+);
 
 // Runs the whisper script on a wav file, resolves with the transcribed text.
 function transcribeWithPython(wavPath) {
