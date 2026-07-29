@@ -9,7 +9,6 @@ const connectDB = require("./config/db");
 const recordingRoutes = require("./routes/recordingRoutes");
 const wifiRoutes = require("./routes/wifiRoutes");
 const transcriptRoutes = require("./routes/transcriptRoutes");
-const audioRoutes = require("./routes/audioRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 
 
@@ -29,7 +28,6 @@ app.get("/api/status", (req, res) => res.json(device.getStatus()));
 app.use("/api/recording", recordingRoutes);
 app.use("/api/wifi", wifiRoutes);
 app.use("/api/transcripts", transcriptRoutes);
-app.use("/api/audio", audioRoutes);
 app.use("/api/settings", settingsRoutes);
 
 

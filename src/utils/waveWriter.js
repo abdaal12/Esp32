@@ -1,13 +1,15 @@
 /**
  * backend/src/utils/wavWriter.js
  *
- * Writes a raw PCM16 mono buffer into a proper .wav file (adds the
- * 44-byte RIFF/WAVE header Node doesn't give us for free).
+ * Builds a proper .wav buffer (RIFF/WAVE header + PCM data) in memory,
+ * and optionally writes it to disk. Audio is only ever written to a
+ * TEMP file for Whisper to read — never persisted — so buildWavBuffer
+ * is what lets us also hand the same bytes to the frontend directly.
  */
 
 const fs = require("fs");
 
-function writeWavFile(filePath, pcmBuffer, sampleRate, numChannels = 1, bitsPerSample = 16) {
+function buildWavBuffer(pcmBuffer, sampleRate, numChannels = 1, bitsPerSample = 16) {
   const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
   const blockAlign = (numChannels * bitsPerSample) / 8;
   const dataSize = pcmBuffer.length;
@@ -19,8 +21,8 @@ function writeWavFile(filePath, pcmBuffer, sampleRate, numChannels = 1, bitsPerS
   header.write("WAVE", 8);
 
   header.write("fmt ", 12);
-  header.writeUInt32LE(16, 16); // fmt chunk size
-  header.writeUInt16LE(1, 20); // PCM format
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
   header.writeUInt16LE(numChannels, 22);
   header.writeUInt32LE(sampleRate, 24);
   header.writeUInt32LE(byteRate, 28);
@@ -30,7 +32,13 @@ function writeWavFile(filePath, pcmBuffer, sampleRate, numChannels = 1, bitsPerS
   header.write("data", 36);
   header.writeUInt32LE(dataSize, 40);
 
-  fs.writeFileSync(filePath, Buffer.concat([header, pcmBuffer]));
+  return Buffer.concat([header, pcmBuffer]);
 }
 
-module.exports = { writeWavFile };
+function writeWavFile(filePath, pcmBuffer, sampleRate, numChannels = 1, bitsPerSample = 16) {
+  const wavBuffer = buildWavBuffer(pcmBuffer, sampleRate, numChannels, bitsPerSample);
+  fs.writeFileSync(filePath, wavBuffer);
+  return wavBuffer;
+}
+
+module.exports = { buildWavBuffer, writeWavFile };

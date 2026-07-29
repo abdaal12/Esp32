@@ -1,15 +1,16 @@
 /**
- * backend/controllers/transcriptController.js
+ * backend/src/controllers/transcriptController.js
  *
  * Bridges to the one Python piece (faster-whisper) via child_process,
- * and handles saving/reading transcripts in MongoDB.
+ * and handles saving/reading transcripts in MongoDB. No audio is ever
+ * saved here — wavPath passed in is a temp file the caller deletes
+ * right after this returns.
  */
 
 const { spawn } = require("child_process");
 const path = require("path");
 const Transcript = require("../models/Transcript");
 const { matchCommonAnswer } = require("./responseController");
-
 
 const PYTHON_SCRIPT = path.join(__dirname, "..", "..", "python", "transcribe.py");
 
@@ -19,7 +20,6 @@ const PYTHON_BIN = process.env.PYTHON_BIN || (
     : "python3"
 );
 
-// Runs the whisper script on a wav file, resolves with the transcribed text.
 function transcribeWithPython(wavPath) {
   return new Promise((resolve, reject) => {
     const proc = spawn(PYTHON_BIN, [PYTHON_SCRIPT, wavPath]);
@@ -44,15 +44,14 @@ function transcribeWithPython(wavPath) {
   });
 }
 
-async function transcribeAndSave(wavPath, audioFileName, durationSeconds) {
+async function transcribeAndSave(wavPath, durationSeconds) {
   const text = await transcribeWithPython(wavPath);
   const { answer } = await matchCommonAnswer(text);
 
   const doc = await Transcript.create({
     text,
-    audioPath: audioFileName,
     durationSeconds,
-    responseText: answer, // null if no common-answer matched (AI call goes here later)
+    responseText: answer,
   });
 
   return doc;
