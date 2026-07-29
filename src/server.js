@@ -12,7 +12,7 @@ const transcriptRoutes = require("./routes/transcriptRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 
 
-const { handleEsp32Connection } = require("./sockets/esp32Socket");
+const { handleEsp32Connection, startHeartbeat } = require("./sockets/esp32Socket");
 const { handleFrontendConnection } = require("./sockets/frontendSocket");
 const device = require("./controllers/deviceController");
 
@@ -38,6 +38,7 @@ const esp32Wss = new WebSocketServer({ noServer: true });
 const frontendWss = new WebSocketServer({ noServer: true });
 
 esp32Wss.on("connection", handleEsp32Connection);
+startHeartbeat(esp32Wss);
 frontendWss.on("connection", handleFrontendConnection);
 
 server.on("upgrade", (request, socket, head) => {
